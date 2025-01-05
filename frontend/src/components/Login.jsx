@@ -16,7 +16,7 @@ function Login() {
 
   // If already logged in, redirect
   if (user) {
-    navigate("/dashboard");
+    navigate("/generator");
   }
 
   const handleSubmit = async (e) => {
@@ -27,7 +27,7 @@ function Login() {
     }
     try {
       await login(username, password);
-      navigate("/dashboard");
+      navigate("/generator");
     } catch {
       alert("Login failed. Check console or backend logs.");
     }

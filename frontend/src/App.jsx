@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./authContext";
 import Login from "./components/Login";
-import Dashboard from "./components/Dashboard";
+import Generator from "./components/Generator"; // Import the new component
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -12,14 +12,14 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route
-            path="/dashboard"
+            path="/generator"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Generator />
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Login />} />
+          <Route path="*" element={<Login />} /> {/* Redirect all unmatched routes to login */}
         </Routes>
       </BrowserRouter>
     </AuthProvider>
