@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, ArrowRight, RotateCcw, LogOut } from "lucide-react";
+import LogoutButton from "./LogoutButton";
 
 function Generator() {
   const [step, setStep] = useState(1);
@@ -21,7 +21,6 @@ function Generator() {
 
   const adminBalance = 100;
 
-  // Existing handlers remain the same
   const handleNext = () => {
     if (step < 5) setStep((prev) => prev + 1);
   };
@@ -44,9 +43,18 @@ function Generator() {
     setErrorMessage("");
   };
 
-  // Your existing handlers (handleInputChange, handlePicTypeChange, calculateCredits, updateProgressSummary)
   const handleInputChange = (field, value) => {
     const updatedFormData = { ...formData, [field]: value };
+    
+    // Initialize posts per profile to 1 when profiles with posts becomes > 0
+    if (field === "profilesWithPosts" && value > 0 && formData.profilesWithPosts === 0) {
+      updatedFormData.postsPerProfile = 1;
+    }
+    // Reset posts per profile to 0 when profiles with posts becomes 0
+    if (field === "profilesWithPosts" && value === 0) {
+      updatedFormData.postsPerProfile = 0;
+    }
+
     setFormData(updatedFormData);
     updateProgressSummary(updatedFormData);
     calculateCredits(updatedFormData);
@@ -116,17 +124,31 @@ function Generator() {
     setProgressSummary(summary);
   };
 
-  const Input = ({ value, onChange, max, placeholder }) => (
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => onChange(Math.max(0, Math.min(max || 100, Number(e.target.value))))}
-      className="w-full p-3 border border-neutral-600 rounded-lg bg-neutral-700 text-white 
-                 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
-                 placeholder-neutral-400"
-      placeholder={placeholder}
-    />
-  );
+  // Select component with custom options generation
+  const Select = ({ value, onChange, max, placeholder, minValue = 0, disabled = false }) => {
+    // Generate options from minValue to max
+    const options = Array.from(
+      { length: (max || 100) - minValue + 1 }, 
+      (_, i) => i + minValue
+    );
+
+    return (
+      <select
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        disabled={disabled}
+        className="w-full p-3 border border-neutral-600 rounded-lg bg-neutral-700 text-white 
+                   focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                   placeholder-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {options.map((num) => (
+          <option key={num} value={num}>
+            {num}
+          </option>
+        ))}
+      </select>
+    );
+  };
 
   const Button = ({ onClick, disabled, variant = "primary", children, className = "" }) => {
     const baseStyles = "px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2";
@@ -167,53 +189,87 @@ function Generator() {
       case 1:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">How many profiles do you want to set up?</h2>
-            <Input
-              value={formData.numProfiles}
-              onChange={(value) => handleInputChange("numProfiles", value)}
-              max={100}
-              placeholder="Enter number of profiles"
-            />
+            <h2 className="text-2xl font-bold text-center">How many profiles do you want to set up?</h2>
+            <div className="flex justify-center">
+              <div className="w-1/2">
+                <Select
+                  value={formData.numProfiles}
+                  onChange={(value) => handleInputChange("numProfiles", value)}
+                  max={100}
+                  minValue={1}
+                  placeholder="Enter number of profiles"
+                />
+              </div>
+            </div>
           </div>
         );
+
       case 2:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">How many profiles should have a profile picture?</h2>
-            <Input
-              value={formData.profilesWithPics}
-              onChange={(value) => handleInputChange("profilesWithPics", value)}
-              max={formData.numProfiles}
-              placeholder="Enter number of profiles with pictures"
-            />
+            <h2 className="text-2xl font-bold text-center">How many profiles should have a profile picture?</h2>
+            <div className="flex justify-center">
+              <div className="w-1/2">
+                <Select
+                  value={formData.profilesWithPics}
+                  onChange={(value) => handleInputChange("profilesWithPics", value)}
+                  max={formData.numProfiles}
+                  placeholder="Enter number of profiles with pictures"
+                />
+              </div>
+            </div>
           </div>
         );
+
       case 3:
+        const totalPercentage = Object.values(formData.picTypeDistribution).reduce(
+          (sum, val) => sum + val,
+          0
+        );
+
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Set the distribution of profile picture types</h2>
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold">Set the distribution of profile picture types</h2>
+              <p className="text-neutral-400">
+                Allocate percentages across different types (must total 100%)
+              </p>
+              <div className={`text-lg font-medium ${totalPercentage === 100 ? 'text-green-400' : 'text-yellow-400'}`}>
+                Current Total: {totalPercentage}%
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-6">
               {["female", "male", "pets", "random"].map((type) => (
                 <div key={type} className="space-y-2">
-                  <label className="block font-medium capitalize">{type}</label>
-                  <Input
+                  <label className="block font-medium capitalize flex justify-between">
+                    <span>{type}</span>
+                    <span className="text-neutral-400">{formData.picTypeDistribution[type]}%</span>
+                  </label>
+                  <Select
                     value={formData.picTypeDistribution[type]}
                     onChange={(value) => handlePicTypeChange(type, value)}
+                    max={100}
                     placeholder={`${type} %`}
                   />
                 </div>
               ))}
             </div>
+            {totalPercentage !== 100 && (
+              <div className="mt-4 p-3 bg-yellow-400/20 text-yellow-200 rounded-lg text-sm text-center">
+                Please adjust the percentages to total exactly 100% to continue
+              </div>
+            )}
           </div>
         );
+
       case 4:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Posts Configuration</h2>
+            <h2 className="text-2xl font-bold text-center">Posts Configuration</h2>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block font-medium">Profiles with posts</label>
-                <Input
+                <Select
                   value={formData.profilesWithPosts}
                   onChange={(value) => handleInputChange("profilesWithPosts", value)}
                   max={formData.numProfiles}
@@ -222,20 +278,23 @@ function Generator() {
               </div>
               <div className="space-y-2">
                 <label className="block font-medium">Posts per profile</label>
-                <Input
+                <Select
                   value={formData.postsPerProfile}
                   onChange={(value) => handleInputChange("postsPerProfile", value)}
                   max={20}
+                  minValue={1}
+                  disabled={formData.profilesWithPosts === 0}
                   placeholder="Max 20 posts"
                 />
               </div>
             </div>
           </div>
         );
+
       case 5:
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Review and Confirm</h2>
+            <h2 className="text-2xl font-bold text-center">Review and Confirm</h2>
             {errorMessage && (
               <div className="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-500">
                 {errorMessage}
@@ -250,6 +309,7 @@ function Generator() {
             </div>
           </div>
         );
+
       default:
         return null;
     }
@@ -257,6 +317,9 @@ function Generator() {
 
   return (
     <div className="min-h-screen bg-neutral-900 text-white">
+      <div className="absolute top-4 right-4">
+        <LogoutButton />
+      </div>
       <div className="max-w-4xl mx-auto p-8">
         <div className="bg-neutral-800 rounded-2xl shadow-xl p-8 space-y-8">
           <ProgressIndicator />
@@ -265,22 +328,19 @@ function Generator() {
 
           <div className="flex justify-between items-center pt-8">
             <Button variant="danger" onClick={handleRedo}>
-              <RotateCcw size={18} />
-              Reset
+              ↺ Reset
             </Button>
             
             <div className="flex gap-4">
               {step > 1 && (
                 <Button variant="secondary" onClick={handleBack}>
-                  <ArrowLeft size={18} />
-                  Back
+                  ← Back
                 </Button>
               )}
               
               {step < 5 ? (
                 <Button onClick={handleNext}>
-                  Next
-                  <ArrowRight size={18} />
+                  Next →
                 </Button>
               ) : (
                 <Button 
