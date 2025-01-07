@@ -1,7 +1,26 @@
 import React, { useState } from "react";
 import LogoutButton from "./LogoutButton";
-
+import ProfilePreview from "./ProfilePreview";
 function Generator() {
+  // AnimatedStep component - single definition at the top
+  const AnimatedStep = ({ children }) => {
+    const [isVisible, setIsVisible] = React.useState(false);
+
+    React.useEffect(() => {
+      const timer = setTimeout(() => setIsVisible(true), 50);
+      return () => clearTimeout(timer);
+    }, []);
+
+    return (
+      <div
+        className={`transition-all duration-500 ease-in-out transform
+          ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+      >
+        {children}
+      </div>
+    );
+  };
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     numProfiles: 1,
@@ -18,7 +37,9 @@ function Generator() {
   const [progressSummary, setProgressSummary] = useState("1 profiles will be set up");
   const [creditsRequired, setCreditsRequired] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
-
+  const [showPreview, setShowPreview] = useState(false);
+  const [generatedProfiles, setGeneratedProfiles] = useState([]);
+  const [isCompleted, setIsCompleted] = useState(false);
   const adminBalance = 100;
 
   const handleNext = () => {
@@ -26,7 +47,13 @@ function Generator() {
   };
 
   const handleBack = () => {
-    if (step > 1) setStep((prev) => prev - 1);
+    if (step > 1) {
+      if (step === 4 && formData.profilesWithPics === 0) {
+        setStep(2);
+      } else {
+        setStep((prev) => prev - 1);
+      }
+    }
   };
 
   const handleRedo = () => {
@@ -41,16 +68,17 @@ function Generator() {
     setProgressSummary("1 profiles will be set up");
     setCreditsRequired(0);
     setErrorMessage("");
+    setShowPreview(false);
+    setGeneratedProfiles([]);
+    setIsCompleted(false);
   };
 
   const handleInputChange = (field, value) => {
     const updatedFormData = { ...formData, [field]: value };
     
-    // Initialize posts per profile to 1 when profiles with posts becomes > 0
     if (field === "profilesWithPosts" && value > 0 && formData.profilesWithPosts === 0) {
       updatedFormData.postsPerProfile = 1;
     }
-    // Reset posts per profile to 0 when profiles with posts becomes 0
     if (field === "profilesWithPosts" && value === 0) {
       updatedFormData.postsPerProfile = 0;
     }
@@ -124,9 +152,7 @@ function Generator() {
     setProgressSummary(summary);
   };
 
-  // Select component with custom options generation
   const Select = ({ value, onChange, max, placeholder, minValue = 0, disabled = false }) => {
-    // Generate options from minValue to max
     const options = Array.from(
       { length: (max || 100) - minValue + 1 }, 
       (_, i) => i + minValue
@@ -175,9 +201,9 @@ function Generator() {
       {[1, 2, 3, 4, 5].map((num) => (
         <div key={num} className="flex flex-col items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center
-                          ${step === num ? "bg-blue-500" : 
-                            step > num ? "bg-green-500" : "bg-neutral-700"}`}>
-            {step > num ? "✓" : num}
+                          ${step === num && !isCompleted ? "bg-blue-500" : 
+                            step > num || (step === num && isCompleted) ? "bg-green-500" : "bg-neutral-700"}`}>
+            {step > num || (step === num && isCompleted) ? "✓" : num}
           </div>
         </div>
       ))}
@@ -188,131 +214,195 @@ function Generator() {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">How many profiles do you want to set up?</h2>
-            <div className="flex justify-center">
-              <div className="w-1/2">
-                <Select
-                  value={formData.numProfiles}
-                  onChange={(value) => handleInputChange("numProfiles", value)}
-                  max={100}
-                  minValue={1}
-                  placeholder="Enter number of profiles"
-                />
+          <div className="relative" style={{ minHeight: '150px' }}>
+            <AnimatedStep>
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-center">How many profiles do you want to set up?</h2>
+                <div className="flex justify-center">
+                  <div className="w-1/2">
+                    <Select
+                      value={formData.numProfiles}
+                      onChange={(value) => handleInputChange("numProfiles", value)}
+                      max={100}
+                      minValue={1}
+                      placeholder="Enter number of profiles"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            </AnimatedStep>
           </div>
         );
 
       case 2:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">How many profiles should have a profile picture?</h2>
-            <div className="flex justify-center">
-              <div className="w-1/2">
-                <Select
-                  value={formData.profilesWithPics}
-                  onChange={(value) => handleInputChange("profilesWithPics", value)}
-                  max={formData.numProfiles}
-                  placeholder="Enter number of profiles with pictures"
-                />
+          <div className="relative" style={{ minHeight: '300px' }}>
+            <AnimatedStep>
+              <div className="space-y-6">
+                <div className="text-center space-y-3">
+                  <h2 className="text-2xl font-bold">How many profiles should have a profile picture?</h2>
+                  <div className="text-neutral-400 space-y-2">
+                    <p>
+                      Current selection: <span className="text-white font-medium">{formData.profilesWithPics}</span> profiles with pictures
+                    </p>
+                    <div className="bg-neutral-700/50 p-3 rounded-lg">
+                      {formData.profilesWithPics === 0 
+                        ? "⚠️ Selecting 0 will skip Step 3 (Profile Picture Type Distribution)"
+                        : "✓ You'll configure picture type distribution in Step 3"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <div className="w-1/2">
+                    <Select
+                      value={formData.profilesWithPics}
+                      onChange={(value) => handleInputChange("profilesWithPics", value)}
+                      max={formData.numProfiles}
+                      placeholder="Enter number of profiles with pictures"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            </AnimatedStep>
           </div>
         );
 
       case 3:
+        if (formData.profilesWithPics === 0) {
+          handleNext();
+          return null;
+        }
+
         const totalPercentage = Object.values(formData.picTypeDistribution).reduce(
           (sum, val) => sum + val,
           0
         );
 
+        const canProceed = totalPercentage === 100;
+
         return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Set the distribution of profile picture types</h2>
-              <p className="text-neutral-400">
-                Allocate percentages across different types (must total 100%)
-              </p>
-              <div className={`text-lg font-medium ${totalPercentage === 100 ? 'text-green-400' : 'text-yellow-400'}`}>
-                Current Total: {totalPercentage}%
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              {["female", "male", "pets", "random"].map((type) => (
-                <div key={type} className="space-y-2">
-                  <label className="block font-medium capitalize flex justify-between">
-                    <span>{type}</span>
-                    <span className="text-neutral-400">{formData.picTypeDistribution[type]}%</span>
-                  </label>
-                  <Select
-                    value={formData.picTypeDistribution[type]}
-                    onChange={(value) => handlePicTypeChange(type, value)}
-                    max={100}
-                    placeholder={`${type} %`}
-                  />
+          <div className="relative" style={{ minHeight: '300px' }}>
+            <AnimatedStep>
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold">Set the distribution of profile picture types</h2>
+                  <p className="text-neutral-400">
+                    Allocate percentages across different types (must total 100%)
+                  </p>
+                  <div className={`text-lg font-medium ${canProceed ? 'text-green-400' : 'text-yellow-400'}`}>
+                    Current Total: {totalPercentage}%
+                    {!canProceed && 
+                      <span className="block text-sm mt-1">
+                        {totalPercentage < 100 ? `(Need ${100 - totalPercentage}% more)` : `(${totalPercentage - 100}% over limit)`}
+                      </span>
+                    }
+                  </div>
                 </div>
-              ))}
-            </div>
-            {totalPercentage !== 100 && (
-              <div className="mt-4 p-3 bg-yellow-400/20 text-yellow-200 rounded-lg text-sm text-center">
-                Please adjust the percentages to total exactly 100% to continue
+                <div className="grid grid-cols-2 gap-6">
+                  {["female", "male", "pets", "random"].map((type) => (
+                    <div key={type} className="space-y-2">
+                      <label className="block font-medium capitalize flex justify-between">
+                        <span>{type}</span>
+                        <span className="text-neutral-400">{formData.picTypeDistribution[type]}%</span>
+                      </label>
+                      <Select
+                        value={formData.picTypeDistribution[type]}
+                        onChange={(value) => handlePicTypeChange(type, value)}
+                        max={100}
+                        placeholder={`${type} %`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {!canProceed && (
+                  <div className="mt-4 p-3 bg-yellow-400/20 text-yellow-200 rounded-lg text-sm text-center">
+                    Please adjust the percentages to total exactly 100% to continue
+                  </div>
+                )}
               </div>
-            )}
+            </AnimatedStep>
           </div>
         );
 
       case 4:
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Posts Configuration</h2>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block font-medium">Profiles with posts</label>
-                <Select
-                  value={formData.profilesWithPosts}
-                  onChange={(value) => handleInputChange("profilesWithPosts", value)}
-                  max={formData.numProfiles}
-                  placeholder="Number of profiles"
-                />
+          <div className="relative" style={{ minHeight: '300px' }}>
+            <AnimatedStep>
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-center">Posts Configuration</h2>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block font-medium">Profiles with posts</label>
+                    <Select
+                      value={formData.profilesWithPosts}
+                      onChange={(value) => handleInputChange("profilesWithPosts", value)}
+                      max={formData.numProfiles}
+                      placeholder="Number of profiles"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block font-medium">Posts per profile</label>
+                    <Select
+                      value={formData.postsPerProfile}
+                      onChange={(value) => handleInputChange("postsPerProfile", value)}
+                      max={20}
+                      minValue={1}
+                      disabled={formData.profilesWithPosts === 0}
+                      placeholder="Max 20 posts"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="block font-medium">Posts per profile</label>
-                <Select
-                  value={formData.postsPerProfile}
-                  onChange={(value) => handleInputChange("postsPerProfile", value)}
-                  max={20}
-                  minValue={1}
-                  disabled={formData.profilesWithPosts === 0}
-                  placeholder="Max 20 posts"
-                />
-              </div>
-            </div>
+            </AnimatedStep>
           </div>
         );
 
-      case 5:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Review and Confirm</h2>
-            {errorMessage && (
-              <div className="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-500">
-                {errorMessage}
-              </div>
-            )}
-            <div className="bg-neutral-700/50 p-6 rounded-lg space-y-4">
-              <p className="text-neutral-200">{progressSummary}</p>
-              <div className="flex justify-between text-lg">
-                <p className="text-green-400">Balance: {adminBalance}</p>
-                <p className="text-red-400">Credits Required: {creditsRequired}</p>
-              </div>
+        case 5:
+          return (
+            <div className="relative" style={{ minHeight: '300px' }}>
+              <AnimatedStep>
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold text-center">
+                    {isCompleted ? "Profiles Generated Successfully!" : "Review and Confirm"}
+                  </h2>
+                  {errorMessage && (
+                    <div className="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-500">
+                      {errorMessage}
+                    </div>
+                  )}
+                  <div className="bg-neutral-700/50 p-6 rounded-lg space-y-4">
+                    <p className="text-neutral-200">{progressSummary}</p>
+                    <div className="flex justify-between text-lg">
+                      <p className="text-green-400">
+                        Balance: {isCompleted ? adminBalance - creditsRequired : adminBalance}
+                      </p>
+                      <p className="text-red-400">Credits Required: {creditsRequired}</p>
+                    </div>
+                    {isCompleted && (
+                      <div className="mt-4 p-3 bg-green-900/50 text-green-200 rounded-lg">
+                        ✓ Generation completed successfully! Your new balance is {adminBalance - creditsRequired} credits.
+                        Scroll down to see the generated profiles.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </AnimatedStep>
             </div>
-          </div>
-        );
-
+          );
       default:
         return null;
     }
+  };
+
+  const isNextButtonDisabled = () => {
+    if (step === 3 && formData.profilesWithPics > 0) {
+      const totalPercentage = Object.values(formData.picTypeDistribution).reduce(
+        (sum, val) => sum + val,
+        0
+      );
+      return totalPercentage !== 100;
+    }
+    return false;
   };
 
   return (
@@ -324,7 +414,9 @@ function Generator() {
         <div className="bg-neutral-800 rounded-2xl shadow-xl p-8 space-y-8">
           <ProgressIndicator />
           
-          {renderStep()}
+          <div className="relative" style={{ minHeight: step === 1 ? '150px' : '300px' }}>
+            {renderStep()}
+          </div>
 
           <div className="flex justify-between items-center pt-8">
             <Button variant="danger" onClick={handleRedo}>
@@ -339,13 +431,40 @@ function Generator() {
               )}
               
               {step < 5 ? (
-                <Button onClick={handleNext}>
+                <Button 
+                  onClick={handleNext}
+                  disabled={isNextButtonDisabled()}
+                >
                   Next →
                 </Button>
               ) : (
                 <Button 
                   variant="success"
-                  onClick={() => alert("Profiles are being created!")}
+                  onClick={() => {
+                    const profiles = [];
+                    let picTypeIndex = 0;
+                    const picTypes = Object.entries(formData.picTypeDistribution)
+                      .filter(([_, percent]) => percent > 0)
+                      .flatMap(([type, percent]) => 
+                        Array(Math.floor((percent / 100) * formData.profilesWithPics))
+                          .fill(type)
+                      );
+                    
+                    for (let i = 0; i < formData.numProfiles; i++) {
+                      const hasProfilePic = i < formData.profilesWithPics;
+                      const hasPosts = i < formData.profilesWithPosts;
+                      
+                      profiles.push({
+                        hasProfilePic,
+                        picType: hasProfilePic ? picTypes[picTypeIndex++] : null,
+                        posts: hasPosts ? formData.postsPerProfile : 0
+                      });
+                    }
+                    
+                    setGeneratedProfiles(profiles);
+                    setShowPreview(true);
+                    setIsCompleted(true);
+                  }}
                   disabled={creditsRequired > adminBalance}
                 >
                   Confirm
@@ -366,6 +485,8 @@ function Generator() {
           )}
         </div>
       </div>
+      {showPreview && <ProfilePreview profiles={generatedProfiles} />}
+
     </div>
   );
 }
