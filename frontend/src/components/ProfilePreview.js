@@ -59,7 +59,7 @@ const ProfilePreview = ({ profiles = [] }) => {
   }
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="mt-8 space-y-6 px-[100px]">
       <h3 className="text-xl font-bold">Generated Profiles Preview</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {profiles.map((profile, index) => (
@@ -97,7 +97,7 @@ const ProfilePreview = ({ profiles = [] }) => {
               </div>
             </div>
 
-            {profile.posts > 0 && (
+            {(profile.posts > 0 || profile.hasProfilePic) && (
               <div className="space-y-3">
                 <div className="h-px bg-neutral-700" />
                 <h5 className="text-sm font-medium flex items-center gap-2">
@@ -105,14 +105,24 @@ const ProfilePreview = ({ profiles = [] }) => {
                   Posts ({profile.posts})
                 </h5>
                 <div className="grid grid-cols-3 gap-2">
-                  {Array.from({ length: profile.posts }).map((_, postIndex) => (
-                    <div
-                      key={postIndex}
-                      className="aspect-square bg-neutral-700 rounded flex items-center justify-center"
-                    >
-                      <ImageIcon className="w-6 h-6 text-neutral-500" />
-                    </div>
-                  ))}
+                  {profile.posts > 0 
+                    ? Array.from({ length: profile.posts }).map((_, postIndex) => (
+                        <div
+                          key={postIndex}
+                          className="aspect-square bg-neutral-700 rounded flex items-center justify-center"
+                        >
+                          <ImageIcon className="w-6 h-6 text-neutral-500" />
+                        </div>
+                      ))
+                    : Array.from({ length: 3 }).map((_, postIndex) => (
+                        <div
+                          key={postIndex}
+                          className="aspect-square bg-neutral-700 rounded opacity-30 flex items-center justify-center"
+                        >
+                          <ImageIcon className="w-6 h-6 text-neutral-500" />
+                        </div>
+                      ))
+                  }
                 </div>
               </div>
             )}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import LogoutButton from "./LogoutButton";
 import ProfilePreview from "./ProfilePreview";
+
 function Generator() {
   // AnimatedStep component - single definition at the top
   const AnimatedStep = ({ children }) => {
@@ -24,7 +25,7 @@ function Generator() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     numProfiles: 1,
-    profilesWithPics: 0,
+    profilesWithPics: 1, // Default to matching number of profiles
     picTypeDistribution: {
       female: 0,
       male: 0,
@@ -43,16 +44,15 @@ function Generator() {
   const adminBalance = 100;
 
   const handleNext = () => {
-    if (step < 5) setStep((prev) => prev + 1);
+    // Clear any previous error messages
+    setErrorMessage("");
+    
+    if (step < 4) setStep((prev) => prev + 1);
   };
 
   const handleBack = () => {
     if (step > 1) {
-      if (step === 4 && formData.profilesWithPics === 0) {
-        setStep(2);
-      } else {
-        setStep((prev) => prev - 1);
-      }
+      setStep((prev) => prev - 1);
     }
   };
 
@@ -60,7 +60,7 @@ function Generator() {
     setStep(1);
     setFormData({
       numProfiles: 1,
-      profilesWithPics: 0,
+      profilesWithPics: 1,
       picTypeDistribution: { female: 0, male: 0, pets: 0, random: 0 },
       profilesWithPosts: 0,
       postsPerProfile: 0,
@@ -74,7 +74,12 @@ function Generator() {
   };
 
   const handleInputChange = (field, value) => {
-    const updatedFormData = { ...formData, [field]: value };
+    const updatedFormData = { 
+      ...formData, 
+      [field]: value,
+      // Always set profilesWithPics to match numProfiles when numProfiles changes
+      ...(field === "numProfiles" ? { profilesWithPics: value } : {})
+    };
     
     if (field === "profilesWithPosts" && value > 0 && formData.profilesWithPosts === 0) {
       updatedFormData.postsPerProfile = 1;
@@ -198,7 +203,7 @@ function Generator() {
 
   const ProgressIndicator = () => (
     <div className="flex justify-between mb-8 px-4">
-      {[1, 2, 3, 4, 5].map((num) => (
+      {[1, 2, 3, 4].map((num) => (
         <div key={num} className="flex flex-col items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center
                           ${step === num && !isCompleted ? "bg-blue-500" : 
@@ -214,7 +219,7 @@ function Generator() {
     switch (step) {
       case 1:
         return (
-          <div className="relative" style={{ minHeight: '150px' }}>
+          <div className="relative" style={{ minHeight: '200px' }}>
             <AnimatedStep>
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-center">How many profiles do you want to set up?</h2>
@@ -229,50 +234,15 @@ function Generator() {
                     />
                   </div>
                 </div>
+                <div className="bg-neutral-700/50 p-4 rounded-lg text-center text-neutral-300">
+                  <p>🖼️ All {formData.numProfiles} profiles will have a unique profile picture</p>
+                </div>
               </div>
             </AnimatedStep>
           </div>
         );
 
       case 2:
-        return (
-          <div className="relative" style={{ minHeight: '300px' }}>
-            <AnimatedStep>
-              <div className="space-y-6">
-                <div className="text-center space-y-3">
-                  <h2 className="text-2xl font-bold">How many profiles should have a profile picture?</h2>
-                  <div className="text-neutral-400 space-y-2">
-                    <p>
-                      Current selection: <span className="text-white font-medium">{formData.profilesWithPics}</span> profiles with pictures
-                    </p>
-                    <div className="bg-neutral-700/50 p-3 rounded-lg">
-                      {formData.profilesWithPics === 0 
-                        ? "⚠️ Selecting 0 will skip Step 3 (Profile Picture Type Distribution)"
-                        : "✓ You'll configure picture type distribution in Step 3"}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-center">
-                  <div className="w-1/2">
-                    <Select
-                      value={formData.profilesWithPics}
-                      onChange={(value) => handleInputChange("profilesWithPics", value)}
-                      max={formData.numProfiles}
-                      placeholder="Enter number of profiles with pictures"
-                    />
-                  </div>
-                </div>
-              </div>
-            </AnimatedStep>
-          </div>
-        );
-
-      case 3:
-        if (formData.profilesWithPics === 0) {
-          handleNext();
-          return null;
-        }
-
         const totalPercentage = Object.values(formData.picTypeDistribution).reduce(
           (sum, val) => sum + val,
           0
@@ -324,7 +294,7 @@ function Generator() {
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className="relative" style={{ minHeight: '300px' }}>
             <AnimatedStep>
@@ -357,45 +327,45 @@ function Generator() {
           </div>
         );
 
-        case 5:
-          return (
-            <div className="relative" style={{ minHeight: '300px' }}>
-              <AnimatedStep>
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-bold text-center">
-                    {isCompleted ? "Profiles Generated Successfully!" : "Review and Confirm"}
-                  </h2>
-                  {errorMessage && (
-                    <div className="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-500">
-                      {errorMessage}
+      case 4:
+        return (
+          <div className="relative" style={{ minHeight: '300px' }}>
+            <AnimatedStep>
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-center">
+                  {isCompleted ? "Profiles Generated Successfully!" : "Review and Confirm"}
+                </h2>
+                {errorMessage && (
+                  <div className="bg-red-900/50 text-red-200 p-4 rounded-lg border border-red-500">
+                    {errorMessage}
+                  </div>
+                )}
+                <div className="bg-neutral-700/50 p-6 rounded-lg space-y-4">
+                  <p className="text-neutral-200">{progressSummary}</p>
+                  <div className="flex justify-between text-lg">
+                    <p className="text-green-400">
+                      Balance: {isCompleted ? adminBalance - creditsRequired : adminBalance}
+                    </p>
+                    <p className="text-red-400">Credits Required: {creditsRequired}</p>
+                  </div>
+                  {isCompleted && (
+                    <div className="mt-4 p-3 bg-green-900/50 text-green-200 rounded-lg">
+                      ✓ Generation completed successfully! Your new balance is {adminBalance - creditsRequired} credits.
+                      Scroll down to see the generated profiles.
                     </div>
                   )}
-                  <div className="bg-neutral-700/50 p-6 rounded-lg space-y-4">
-                    <p className="text-neutral-200">{progressSummary}</p>
-                    <div className="flex justify-between text-lg">
-                      <p className="text-green-400">
-                        Balance: {isCompleted ? adminBalance - creditsRequired : adminBalance}
-                      </p>
-                      <p className="text-red-400">Credits Required: {creditsRequired}</p>
-                    </div>
-                    {isCompleted && (
-                      <div className="mt-4 p-3 bg-green-900/50 text-green-200 rounded-lg">
-                        ✓ Generation completed successfully! Your new balance is {adminBalance - creditsRequired} credits.
-                        Scroll down to see the generated profiles.
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </AnimatedStep>
-            </div>
-          );
+              </div>
+            </AnimatedStep>
+          </div>
+        );
       default:
         return null;
     }
   };
 
   const isNextButtonDisabled = () => {
-    if (step === 3 && formData.profilesWithPics > 0) {
+    if (step === 2) {
       const totalPercentage = Object.values(formData.picTypeDistribution).reduce(
         (sum, val) => sum + val,
         0
@@ -414,7 +384,7 @@ function Generator() {
         <div className="bg-neutral-800 rounded-2xl shadow-xl p-8 space-y-8">
           <ProgressIndicator />
           
-          <div className="relative" style={{ minHeight: step === 1 ? '150px' : '300px' }}>
+          <div className="relative" style={{ minHeight: step === 1 ? '200px' : '300px' }}>
             {renderStep()}
           </div>
 
@@ -430,7 +400,7 @@ function Generator() {
                 </Button>
               )}
               
-              {step < 5 ? (
+              {step < 4 ? (
                 <Button 
                   onClick={handleNext}
                   disabled={isNextButtonDisabled()}
@@ -444,12 +414,12 @@ function Generator() {
                     const profiles = [];
                     let picTypeIndex = 0;
                     const picTypes = Object.entries(formData.picTypeDistribution)
-                      .filter(([_, percent]) => percent > 0)
-                      .flatMap(([type, percent]) => 
-                        Array(Math.floor((percent / 100) * formData.profilesWithPics))
-                          .fill(type)
-                      );
-                    
+                    .filter(([_, percent]) => percent > 0)
+                    .flatMap(([type, percent]) => {
+                      const count = Math.round((percent / 100) * formData.profilesWithPics);
+                      return Array(count).fill(type);
+                    });
+                            
                     for (let i = 0; i < formData.numProfiles; i++) {
                       const hasProfilePic = i < formData.profilesWithPics;
                       const hasPosts = i < formData.profilesWithPosts;
@@ -473,7 +443,7 @@ function Generator() {
             </div>
           </div>
 
-          {step !== 5 && progressSummary && (
+          {step !== 4 && progressSummary && (
             <div className="mt-8 p-4 bg-neutral-700/30 rounded-lg space-y-2">
               <p className="text-neutral-400">Progress so far:</p>
               <p className="text-neutral-200">{progressSummary}</p>
@@ -486,7 +456,6 @@ function Generator() {
         </div>
       </div>
       {showPreview && <ProfilePreview profiles={generatedProfiles} />}
-
     </div>
   );
 }
