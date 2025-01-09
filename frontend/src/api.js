@@ -10,13 +10,48 @@ const api = axios.create({
   }
 });
 
-// Add request interceptor to handle errors
+// Add request interceptor to prevent repeated failed requests
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Add response interceptor to handle errors
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
-      // Redirect to login on auth errors
-      window.location.href = '/login';
+    const originalRequest = error.config;
+
+    // If we get a 401 and we're not already refreshing
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
+      if (isRefreshing) {
+        // If we're already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return api(originalRequest);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      // Let the auth context handle the redirect
+      processQueue(error);
+      isRefreshing = false;
     }
     return Promise.reject(error);
   }
@@ -26,8 +61,15 @@ api.interceptors.response.use(
 export const downloadProfiles = async (jobId) => {
   try {
     const response = await api.get(`/api/profiles/download/${jobId}`, {
-      responseType: 'blob'
+      responseType: 'blob',
+      headers: {
+        'Accept': 'application/zip'
+      }
     });
+
+    if (!response.data || response.data.size === 0) {
+      throw new Error('No data received from server');
+    }
     
     // Create a download link
     const url = window.URL.createObjectURL(new Blob([response.data]));

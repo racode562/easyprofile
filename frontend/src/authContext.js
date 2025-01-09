@@ -9,17 +9,33 @@ export const AuthProvider = ({ children }) => {
 
   // On mount, call /api/auth/me. If cookie is valid, we get user data; otherwise, user is null.
   useEffect(() => {
-    api
-      .get("/api/auth/me")
-      .then((res) => {
-        setUser({ username: res.data.username });
-      })
-      .catch(() => {
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    let isMounted = true;
+    const checkAuth = async () => {
+      try {
+        const res = await api.get("/api/auth/me");
+        if (isMounted) {
+          setUser({ username: res.data.username });
+        }
+      } catch (error) {
+        if (isMounted) {
+          setUser(null);
+          // Don't redirect on initial auth check
+          if (error.response?.status !== 401) {
+            console.error('Auth check failed:', error);
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    checkAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (username, password) => {

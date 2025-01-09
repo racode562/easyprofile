@@ -19,7 +19,11 @@ function JobHistory() {
       case 'oldest':
         return sortedJobs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       case 'most-pictures':
-        return sortedJobs.sort((a, b) => b.profilesWithPics - a.profilesWithPics);
+        return sortedJobs.sort((a, b) => {
+          const totalPicsA = b.profiles.reduce((total, profile) => total + profile.images.length, 0);
+          const totalPicsB = a.profiles.reduce((total, profile) => total + profile.images.length, 0);
+          return totalPicsA - totalPicsB;
+        });
       default:
         return sortedJobs;
     }
@@ -92,13 +96,26 @@ function JobHistory() {
             to="/generator" 
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Back to Generator
+            Create new profiles job
           </Link>
         </div>
 
         {jobs.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-neutral-400">No jobs found. Start by generating some profiles!</p>
+          <div className="text-center py-12 bg-neutral-800 rounded-lg">
+            <svg className="mx-auto h-12 w-12 text-neutral-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-xl font-semibold mb-2">No Jobs Found</h3>
+            <p className="text-neutral-400 mb-6">Ready to start generating profiles? Click the button above to create your first job!</p>
+            <Link 
+              to="/generator" 
+              className="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Create new profiles job
+              <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
           </div>
         ) : (
           <div className="space-y-6">
@@ -119,6 +136,11 @@ function JobHistory() {
                       Download Profiles
                     </button>
                   </div>
+                  {new Date(job.expiresAt) > new Date() && (
+                    <div className="mb-4 p-3 bg-yellow-600/20 text-yellow-200 rounded-lg text-sm">
+                      ⚠️ Warning: This job will expire on {new Date(job.expiresAt).toLocaleDateString()}. Please download your profiles before they expire, or you won't be able to access the pictures.
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm text-neutral-400">
                     <div>
                       <span className="font-medium">Created:</span>{' '}
@@ -134,8 +156,8 @@ function JobHistory() {
                       {job.numProfiles}
                     </div>
                     <div>
-                      <span className="font-medium">With Pictures:</span>{' '}
-                      {job.profilesWithPics}
+                      <span className="font-medium">Total Pictures:</span>{' '}
+                      {job.profiles.reduce((total, profile) => total + profile.images.length, 0)}
                     </div>
                     <div>
                       <span className="font-medium">Balance Before:</span>{' '}

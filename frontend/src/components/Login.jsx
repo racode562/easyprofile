@@ -15,9 +15,11 @@ function Login() {
   };
 
   // If already logged in, redirect
-  if (user) {
-    navigate("/generator");
-  }
+  React.useEffect(() => {
+    if (user) {
+      navigate("/jobs");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +29,7 @@ function Login() {
     }
     try {
       await login(username, password);
-      navigate("/generator");
+      navigate("/jobs");
     } catch {
       alert("Login failed. Check console or backend logs.");
     }

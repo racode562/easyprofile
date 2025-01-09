@@ -304,8 +304,11 @@ function Generator() {
             const existingProfileIndex = prev.findIndex(p => p._id === data.profile._id);
             
             if (existingProfileIndex === -1) {
-              // New profile - add it
-              return [...prev, data.profile];
+              // New profile - add it with jobId
+              return [...prev, {
+                ...data.profile,
+                jobId: data.profile.jobId // Ensure jobId is included
+              }];
             } else {
               // Existing profile - merge the new image
               const updatedProfiles = [...prev];
@@ -314,6 +317,7 @@ function Generator() {
               // Add the new image to existing profile's images
               updatedProfiles[existingProfileIndex] = {
                 ...existingProfile,
+                jobId: data.profile.jobId, // Ensure jobId is included
                 images: [...existingProfile.images, ...data.profile.images]
               };
               
@@ -681,9 +685,14 @@ function Generator() {
                     <p className="text-red-400">Maximum Credits Required: {creditsRequired} (actual usage may be lower)</p>
                   </div>
                   {isCompleted && (
-                    <div className="mt-4 p-3 bg-green-900/50 text-green-200 rounded-lg">
-                      ✓ Generation completed successfully! {actualCreditsUsed} credits were used. Your new balance is {userCredits} credits.
-                      Scroll down to see the generated profiles.
+                    <div className="mt-4 space-y-3">
+                      <div className="p-3 bg-green-900/50 text-green-200 rounded-lg">
+                        ✓ Generation completed successfully! {actualCreditsUsed} credits were used. Your new balance is {userCredits} credits.
+                        Scroll down to see the generated profiles.
+                      </div>
+                      <div className="p-3 bg-blue-900/50 text-blue-200 rounded-lg">
+                        💡 Tip: Click the "View & Download Previous Jobs" button in the top right corner to access this job and previous jobs' details, where you can also download your generated images.
+                      </div>
                     </div>
                   )}
                 </div>
@@ -714,7 +723,7 @@ function Generator() {
           to="/jobs"
           className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded flex items-center gap-2"
         >
-          📋 View Previous Jobs and Balance History
+          📋⬇️ View & Download Previous Jobs
         </Link>
         <LogoutButton />
       </div>
@@ -784,6 +793,7 @@ function Generator() {
           showHeading={true}
           className="mt-8 space-y-6 px-[100px]"
           generationProgress={generationProgress}
+          isCompleted={isCompleted}
         />
       )}
     </div>

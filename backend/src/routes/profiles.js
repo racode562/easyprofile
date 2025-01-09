@@ -4,6 +4,7 @@ const { fal } = require("@fal-ai/client");
 const fs = require('fs-extra');
 const path = require('path');
 const mongoose = require('mongoose');
+const archiver = require('archiver');
 const User = require('../models/User');
 const { authenticateToken } = require('./auth');
 
@@ -111,6 +112,12 @@ const POST_PROMPTS = {
     'low quality grainy picture of a party taken in a big city in 2009.jpg',
     'low quality grainy picture of a party taken in a bar in 2009.jpg',
     'low quality grainy picture of a group of friends having dinner in 2009.jpg',
+    'low quality grainy picture of a mostly women party taken at a library in 2004.jpg',
+    'low quality grainy picture of a mostly women party taken at a park in 2004.jpg',
+    'low quality grainy picture of a mostly women party taken in a ballroom in 2009.jpg',
+    'low quality grainy picture of a mostly women party taken in a big city in 2009.jpg',
+    'low quality grainy picture of a mostly women party taken in a bar in 2009.jpg',
+    'low quality grainy picture of a mostly women group of friends having dinner in 2009.jpg',
   ],
   male: [
     'instagram.heic',
@@ -517,7 +524,7 @@ router.get('/generate', authenticateToken, async (req, res) => {
       // Send the full profile with all images
       const partialProfile = {
         _id: profile._id,
-        jobId: profile.jobId,
+        jobId: job._id, // Use the job ID we created
         picType: profile.picType,
         posts: profile.posts,
         images: profile.images, // Send all images
@@ -587,9 +594,17 @@ router.get('/jobs', authenticateToken, async (req, res) => {
                  profile.jobId.toString() === job._id.toString() && 
                  profile.expiresAt > now;
         });
+
+        // Count actual profile pictures (non-post images)
+        const actualProfilesWithPics = jobProfiles.reduce((count, profile) => {
+          const hasProfilePic = profile.images.some(img => !img.isPost);
+          return count + (hasProfilePic ? 1 : 0);
+        }, 0);
+
         return {
           ...job.toObject(),
-          profiles: jobProfiles
+          profiles: jobProfiles,
+          profilesWithPics: actualProfilesWithPics // Override with actual count
         };
       });
 
@@ -620,12 +635,19 @@ router.get('/download/:jobId', authenticateToken, async (req, res) => {
     );
 
     // Create a zip file
-    const archiver = require('archiver');
-    const archive = archiver('zip');
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Maximum compression
+    });
 
     // Set response headers
     res.attachment(`profiles-${job._id}.zip`);
+    res.setHeader('Content-Type', 'application/zip');
     archive.pipe(res);
+
+    // Handle archiver errors
+    archive.on('error', (err) => {
+      throw err;
+    });
 
     // Add files to the zip
     for (let i = 0; i < jobProfiles.length; i++) {
@@ -634,14 +656,22 @@ router.get('/download/:jobId', authenticateToken, async (req, res) => {
       
       // Add profile picture if exists
       if (profile.images && profile.images.length > 0) {
-        const profilePicPath = path.join('/app', profile.images[0].url);
-        archive.file(profilePicPath, { name: `${profileFolder}/profile_picture.jpg` });
+      const profilePic = profile.images.find(img => !img.isPost);
+      if (profilePic) {
+        const profilePicPath = path.join('/app', profilePic.url);
+        if (fs.existsSync(profilePicPath)) {
+          archive.file(profilePicPath, { name: `${profileFolder}/profile_picture.jpg` });
+        }
+      }
       }
 
       // Add post images if they exist
       const posts = profile.images.filter(img => img.isPost);
       posts.forEach((post, j) => {
-        archive.file(path.join('/app', post.url), { name: `${profileFolder}/post${j + 1}.jpg` });
+        const postPath = path.join('/app', post.url);
+        if (fs.existsSync(postPath)) {
+          archive.file(postPath, { name: `${profileFolder}/post${j + 1}.jpg` });
+        }
       });
     }
 

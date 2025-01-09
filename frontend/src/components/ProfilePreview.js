@@ -1,4 +1,5 @@
 import React from 'react';
+import api, { downloadProfiles } from '../api';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -91,7 +92,18 @@ const LoadingProfile = () => (
   </div>
 );
 
-const ProfilePreview = ({ profiles = [], showHeading = false, className = '', generationProgress = {} }) => {
+const ProfilePreview = ({ profiles = [], showHeading = false, className = '', generationProgress = {}, isCompleted = false }) => {
+  const [downloadError, setDownloadError] = React.useState(null);
+
+  const handleDownload = async (jobId) => {
+    try {
+      setDownloadError(null);
+      await downloadProfiles(jobId);
+    } catch (err) {
+      console.error('Failed to download profiles:', err);
+      setDownloadError('Failed to download profiles. Please try again.');
+    }
+  };
   // Handle both single profile and array of profiles
   const profilesArray = Array.isArray(profiles) ? profiles : [profiles];
 
@@ -99,7 +111,9 @@ const ProfilePreview = ({ profiles = [], showHeading = false, className = '', ge
     return (
       <div className={className}>
         {showHeading && (
-          <h3 className="text-xl font-bold mb-6">Generated Profiles Preview</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold">Generated Profiles Preview</h3>
+          </div>
         )}
         <InitialLoadingState />
       </div>
@@ -109,7 +123,22 @@ const ProfilePreview = ({ profiles = [], showHeading = false, className = '', ge
   return (
     <div className={className}>
       {showHeading && (
-        <h3 className="text-xl font-bold mb-6">Generated Profiles Preview</h3>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold">Generated Profiles Preview</h3>
+          <div>
+            {downloadError && (
+              <div className="text-red-500 text-sm mb-2">{downloadError}</div>
+            )}
+          {profiles.length > 0 && profiles[0].jobId && isCompleted && (
+            <button
+              onClick={() => handleDownload(profiles[0].jobId)}
+                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+              >
+                Download Profiles
+              </button>
+            )}
+          </div>
+        </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Show existing profiles */}
@@ -168,7 +197,7 @@ const ProfilePreview = ({ profiles = [], showHeading = false, className = '', ge
                             src={`${API_URL}${posts[postIndex].url}`}
                             alt={`Post ${postIndex + 1}`}
                             className="w-full h-full object-cover"
-                            title={posts[postIndex].prompt}
+                            title={`Post ${postIndex + 1}`}
                           />
                         ) : (
                           <LoadingImage />
