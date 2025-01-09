@@ -387,9 +387,10 @@ function Generator() {
     }
   };
 
-  const Select = ({ value, onChange, max, placeholder, minValue = 0, disabled = false }) => {
+  const Select = ({ value, onChange, max, placeholder, minValue = 0, disabled = false, remainingProfiles = null }) => {
+    const effectiveMax = remainingProfiles !== null ? Math.min(max, value + remainingProfiles) : max;
     const options = Array.from(
-      { length: (max || 100) - minValue + 1 }, 
+      { length: (effectiveMax || 100) - minValue + 1 }, 
       (_, i) => i + minValue
     );
 
@@ -510,6 +511,8 @@ function Generator() {
 
         const canProceed = totalQuantity === formData.numProfiles;
 
+        const remainingToAllocate = formData.numProfiles - totalQuantity;
+
         return (
           <div className="relative" style={{ minHeight: '300px' }}>
             <AnimatedStep>
@@ -523,28 +526,35 @@ function Generator() {
                     Current Total: {totalQuantity} profiles
                     {!canProceed && 
                       <span className="block text-sm mt-1">
-                        {totalQuantity < formData.numProfiles ? 
-                          `(Need ${formData.numProfiles - totalQuantity} more)` : 
-                          `(${totalQuantity - formData.numProfiles} over limit)`}
+                        {remainingToAllocate > 0 ? 
+                          `(${remainingToAllocate} profiles left to allocate)` : 
+                          `(${Math.abs(remainingToAllocate)} over limit)`}
                       </span>
                     }
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
-                  {["female", "male", "pets", "random"].map((type) => (
-                    <div key={type} className="space-y-2">
-                      <label className="block font-medium capitalize flex justify-between">
-                        <span>{type}</span>
-                        <span className="text-neutral-400">{formData.picTypeDistribution[type]} profiles</span>
-                      </label>
-                      <Select
-                        value={formData.picTypeDistribution[type]}
-                        onChange={(value) => handlePicTypeChange(type, value)}
-                        max={formData.numProfiles}
-                        placeholder={`${type} profiles`}
-                      />
-                    </div>
-                  ))}
+                  {["female", "male", "pets", "random"].map((type) => {
+                    const currentValue = formData.picTypeDistribution[type];
+                    const isDisabled = remainingToAllocate === 0 && currentValue === 0;
+                    
+                    return (
+                      <div key={type} className="space-y-2">
+                        <label className="block font-medium capitalize flex justify-between">
+                          <span>{type}</span>
+                          <span className="text-neutral-400">{currentValue} profiles</span>
+                        </label>
+                        <Select
+                          value={currentValue}
+                          onChange={(value) => handlePicTypeChange(type, value)}
+                          max={formData.numProfiles}
+                          placeholder={`${type} profiles`}
+                          disabled={isDisabled}
+                          remainingProfiles={remainingToAllocate}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
                 {!canProceed && (
                   <div className="mt-4 p-3 bg-yellow-400/20 text-yellow-200 rounded-lg text-sm text-center">
