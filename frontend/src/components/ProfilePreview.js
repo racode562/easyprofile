@@ -1,5 +1,7 @@
 import React from 'react';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 // SVG Icons as components
 const UserIcon = ({ className }) => (
   <svg 
@@ -53,81 +55,138 @@ const FileTextIcon = ({ className }) => (
   </svg>
 );
 
-const ProfilePreview = ({ profiles = [] }) => {
-  if (!profiles || profiles.length === 0) {
-    return null;
+const LoadingImage = () => (
+  <div className="animate-pulse bg-neutral-700 w-full h-full flex items-center justify-center">
+    <svg className="animate-spin h-8 w-8 text-neutral-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  </div>
+);
+
+const InitialLoadingState = () => (
+  <div className="flex items-center justify-center p-12">
+    <div className="animate-spin h-16 w-16 text-neutral-500">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+  </div>
+);
+
+const LoadingProfile = () => (
+  <div className="bg-neutral-800 rounded-lg p-6 space-y-4 animate-pulse">
+    <div className="flex items-center gap-4">
+      <div className="flex-shrink-0">
+        <div className="w-16 h-16 rounded-full overflow-hidden">
+          <LoadingImage />
+        </div>
+      </div>
+      <div>
+        <div className="h-5 bg-neutral-700 rounded w-24"></div>
+        <div className="h-4 bg-neutral-700 rounded w-32 mt-2"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const ProfilePreview = ({ profiles = [], showHeading = false, className = '', generationProgress = {} }) => {
+  // Handle both single profile and array of profiles
+  const profilesArray = Array.isArray(profiles) ? profiles : [profiles];
+
+  if (!profilesArray || profilesArray.length === 0) {
+    return (
+      <div className={className}>
+        {showHeading && (
+          <h3 className="text-xl font-bold mb-6">Generated Profiles Preview</h3>
+        )}
+        <InitialLoadingState />
+      </div>
+    );
   }
 
   return (
-    <div className="mt-8 space-y-6 px-[100px]">
-      <h3 className="text-xl font-bold">Generated Profiles Preview</h3>
+    <div className={className}>
+      {showHeading && (
+        <h3 className="text-xl font-bold mb-6">Generated Profiles Preview</h3>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {profiles.map((profile, index) => (
-          <div key={index} className="bg-neutral-800 rounded-lg p-6 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                {profile.hasProfilePic ? (
-                  <div className="w-16 h-16 rounded-full bg-neutral-700 flex items-center justify-center">
-                    {profile.picType === 'female' && (
-                      <img src="/api/placeholder/64/64" alt="Female Profile" className="rounded-full" />
-                    )}
-                    {profile.picType === 'male' && (
-                      <img src="/api/placeholder/64/64" alt="Male Profile" className="rounded-full" />
-                    )}
-                    {profile.picType === 'pets' && (
-                      <img src="/api/placeholder/64/64" alt="Pet Profile" className="rounded-full" />
-                    )}
-                    {profile.picType === 'random' && (
-                      <img src="/api/placeholder/64/64" alt="Random Profile" className="rounded-full" />
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-neutral-700 flex items-center justify-center">
-                    <UserIcon className="w-8 h-8 text-neutral-500" />
-                  </div>
-                )}
-              </div>
-              <div>
-                <h4 className="font-medium">Profile {index + 1}</h4>
-                <p className="text-sm text-neutral-400">
-                  {profile.hasProfilePic 
-                    ? `${profile.picType} profile picture`
-                    : 'No profile picture'}
-                </p>
-              </div>
-            </div>
+        {/* Show existing profiles */}
+        {profilesArray.map((profile, index) => {
+          // Get profile picture (first non-post image)
+          const profilePic = profile.images?.find(img => !img.isPost);
+          // Get post images
+          const posts = profile.images?.filter(img => img.isPost) || [];
 
-            {(profile.posts > 0 || profile.hasProfilePic) && (
-              <div className="space-y-3">
-                <div className="h-px bg-neutral-700" />
-                <h5 className="text-sm font-medium flex items-center gap-2">
-                  <FileTextIcon className="w-4 h-4" />
-                  Posts ({profile.posts})
-                </h5>
-                <div className="grid grid-cols-3 gap-2">
-                  {profile.posts > 0 
-                    ? Array.from({ length: profile.posts }).map((_, postIndex) => (
-                        <div
-                          key={postIndex}
-                          className="aspect-square bg-neutral-700 rounded flex items-center justify-center"
-                        >
-                          <ImageIcon className="w-6 h-6 text-neutral-500" />
-                        </div>
-                      ))
-                    : Array.from({ length: 3 }).map((_, postIndex) => (
-                        <div
-                          key={postIndex}
-                          className="aspect-square bg-neutral-700 rounded opacity-30 flex items-center justify-center"
-                        >
-                          <ImageIcon className="w-6 h-6 text-neutral-500" />
-                        </div>
-                      ))
-                  }
+          return (
+            <div key={profile._id || index} className="bg-neutral-800 rounded-lg p-6 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  {profilePic ? (
+                    <div className="w-16 h-16 rounded-full bg-neutral-700 flex items-center justify-center overflow-hidden">
+                      <img 
+                        crossOrigin="anonymous" 
+                        src={`${API_URL}${profilePic.url}`}
+                        alt={`${profile.picType} Profile`} 
+                        className="w-full h-full object-cover rounded-full" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-full overflow-hidden">
+                      <LoadingImage />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-medium">Profile {index + 1}</h4>
+                  <p className="text-sm text-neutral-400">
+                    {profilePic
+                      ? `${profile.picType} profile picture`
+                      : 'No profile picture'}
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              {posts.length > 0 && (
+                <div className="space-y-3">
+                  <div className="h-px bg-neutral-700" />
+                  <h5 className="text-sm font-medium flex items-center gap-2">
+                    <FileTextIcon className="w-4 h-4" />
+                    Posts ({posts.length})
+                  </h5>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Show loading placeholders for remaining posts */}
+                    {Array.from({ length: profile.posts }).map((_, postIndex) => (
+                      <div
+                        key={postIndex}
+                        className="aspect-square bg-neutral-700 rounded overflow-hidden"
+                      >
+                        {posts[postIndex] ? (
+                          <img
+                            crossOrigin="anonymous"
+                            src={`${API_URL}${posts[postIndex].url}`}
+                            alt={`Post ${postIndex + 1}`}
+                            className="w-full h-full object-cover"
+                            title={posts[postIndex].prompt}
+                          />
+                        ) : (
+                          <LoadingImage />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        
+        {/* Show loading profile if more profiles are coming */}
+        {generationProgress.totalProfiles > 0 && 
+         generationProgress.currentProfile < generationProgress.totalProfiles && (
+          <LoadingProfile />
+        )}
       </div>
     </div>
   );

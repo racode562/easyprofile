@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 mongoose.set('strictQuery', false); // Suppress deprecation warning
 
 async function connectDB() {
-  const uri = process.env.MONGO_URI;
+  const uri = process.env.MONGODB_URI;
   console.log("Attempting to connect to MongoDB with URI:", uri);
   try {
     await mongoose.connect(uri, {

@@ -2,7 +2,8 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./authContext";
 import Login from "./components/Login";
-import Generator from "./components/Generator"; // Import the new component
+import Generator from "./components/Generator";
+import JobHistory from "./components/JobHistory";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -11,15 +12,12 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route
-            path="/generator"
-            element={
-              <ProtectedRoute>
-                <Generator />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Login />} /> {/* Redirect all unmatched routes to login */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/generator" element={<Generator />} />
+            <Route path="/jobs" element={<JobHistory />} />
+            <Route path="/" element={<JobHistory />} />
+          </Route>
+          <Route path="*" element={<Login />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
