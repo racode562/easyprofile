@@ -14,6 +14,23 @@ fal.config({
 
 // Prompts for different profile types
 const FEMALE_PROMPTS = [
+  'low quality grainy picture of a woman from far away in 2009.jpg',
+  'close_up_woman_low_quality_selfie_casual_top_angle.jpg',
+  'close_up_woman_low_quality_selfie_casual_bottom_angle.jpg',
+  'close_up_woman_low_quality_selfie_casual_side_angle.jpg',
+  'solo_low_quality_selfie_casual_car.jpg',
+  'solo_low_quality_selfie_casual_beach_woman.jpg',
+  'low quality grainy picture of a woman taken at a park in 2004 from different angles',
+  'low quality grainy picture of a  woman taken at a beach in 2004.jpg',
+  'low quality grainy picture of a woman taken at a hike in 2004.jpg',
+  'low quality grainy picture of a woman taken at a ballroom in 2004.jpg',
+  'low quality grainy picture of a young woman taken at a library in 2004.jpg',
+  'low quality grainy picture of a woman taken at a library in 2004.jpg',
+  'low quality grainy picture of a woman taken at a library in 2004.jpg',
+  'low quality grainy picture of a woman taken at a party in 2004.jpg',
+  'close_up_woman_low_quality_selfie_casual.jpg',
+  'close_up_woman_low_quality_selfie.jpg',
+  'akward_close_up_woman_low_quality_selfie.jpg',
   'photo_of_instagram_woman_casual_far.heic',
   'photo_of_instagram_woman_casual.heic',
   'photo_of_instagram_woman_casual_selfie.heic',
@@ -23,6 +40,23 @@ const FEMALE_PROMPTS = [
 ];
 
 const MALE_PROMPTS = [
+  'low quality grainy picture of a man from far away in 2009.jpg',
+  'close_up_man_low_quality_selfie_casual_top_angle.jpg',
+  'close_up_man_low_quality_selfie_casual_bottom_angle.jpg',
+  'close_up_man_low_quality_selfie_casual_side_angle.jpg',
+  'solo_low_quality_selfie_casual_car.jpg',
+  'solo_low_quality_selfie_casual_beach_man.jpg',
+  'low quality grainy picture of a man taken at a park in 2004 from different angles',
+  'low quality grainy picture of a  man taken at a beach in 2004.jpg',
+  'low quality grainy picture of a man taken at a hike in 2004.jpg',
+  'low quality grainy picture of a man taken at a ballroom in 2004.jpg',
+  'low quality grainy picture of a young man taken at a library in 2004.jpg',
+  'low quality grainy picture of a man taken at a library in 2004.jpg',
+  'low quality grainy picture of a man taken at a library in 2004.jpg',
+  'low quality grainy picture of a man taken at a party in 2004.jpg',
+  'close_up_man_low_quality_selfie_casual.jpg',
+  'close_up_man_low_quality_selfie.jpg',
+  'akward_close_up_man_low_quality_selfie.jpg',
   'photo_of_instagram_man_casual_far.heic',
   'photo_of_instagram_man_casual.heic',
   'photo_of_instagram_man_casual_selfie.heic',
@@ -31,10 +65,19 @@ const MALE_PROMPTS = [
   'photo_of_instagram_man_casual_far_street_photography_black_and_white.heic'
 ];
 
+const PET_PROMPTS = [
+  'pet_instagram_selfie_low_quality.jpg',
+  'pet_instagram_selfie.jpg',
+  'dog_instagram_selfie_low_quality.jpg',
+  'cat_instagram_selfie_low_quality.jpg',
+  'dog_instagram_selfie.jpg',
+  'cat_instagram_selfie.jpg'
+]
+
 const PROMPTS = {
   female: () => FEMALE_PROMPTS[Math.floor(Math.random() * FEMALE_PROMPTS.length)],
   male: () => MALE_PROMPTS[Math.floor(Math.random() * MALE_PROMPTS.length)],
-  pets: 'pets_instagram_selfie.jpg',
+  pets: () => PET_PROMPTS[Math.floor(Math.random() * PET_PROMPTS.length)],
   random: 'random_instagram.jpg'
 };
 
@@ -59,7 +102,15 @@ const POST_PROMPTS = {
     'instagram_dog.heic',
     'instagram_dog.jpg',
     'instagram_cat.jpg',
-    'instagram_cat.heic'
+    'instagram_cat.heic',
+    'low quality grainy picture of a party taken at a library in 2004.jpg',
+    'low quality grainy picture of a party taken at a park in 2004.jpg',
+    'low quality grainy picture of a party taken in a ballroom in 2009.jpg',
+    'low quality grainy picture of travelling in 2009.jpg',
+    'low quality grainy picture of a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a bar in 2009.jpg',
+    'low quality grainy picture of a group of friends having dinner in 2009.jpg',
   ],
   male: [
     'instagram.heic',
@@ -80,7 +131,15 @@ const POST_PROMPTS = {
     'instagram_dog.heic',
     'instagram_dog.jpg',
     'instagram_cat.jpg',
-    'instagram_cat.heic'
+    'instagram_cat.heic',
+    'low quality grainy picture of a party taken at a library in 2004.jpg',
+    'low quality grainy picture of a party taken at a park in 2004.jpg',
+    'low quality grainy picture of a party taken in a ballroom in 2009.jpg',
+    'low quality grainy picture of travelling in 2009.jpg',
+    'low quality grainy picture of a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a bar in 2009.jpg',
+    'low quality grainy picture of a group of friends having dinner in 2009.jpg',
   ],
   pets: [
     'instagram.heic',
@@ -108,7 +167,15 @@ const POST_PROMPTS = {
     'instagram_dog.heic',
     'instagram_dog.jpg',
     'instagram_cat.jpg',
-    'instagram_cat.heic'
+    'instagram_cat.heic',
+    'low quality grainy picture of a party taken at a library in 2004.jpg',
+    'low quality grainy picture of a party taken at a park in 2004.jpg',
+    'low quality grainy picture of a party taken in a ballroom in 2009.jpg',
+    'low quality grainy picture of travelling in 2009.jpg',
+    'low quality grainy picture of a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a bar in 2009.jpg',
+    'low quality grainy picture of a group of friends having dinner in 2009.jpg',
   ],
   random: [
     'instagram.heic',
@@ -136,7 +203,15 @@ const POST_PROMPTS = {
     'instagram_dog.heic',
     'instagram_dog.jpg',
     'instagram_cat.jpg',
-    'instagram_cat.heic'
+    'instagram_cat.heic',
+    'low quality grainy picture of a party taken at a library in 2004.jpg',
+    'low quality grainy picture of a party taken at a park in 2004.jpg',
+    'low quality grainy picture of a party taken in a ballroom in 2009.jpg',
+    'low quality grainy picture of travelling in 2009.jpg',
+    'low quality grainy picture of a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a big city in 2009.jpg',
+    'low quality grainy picture of a party taken in a bar in 2009.jpg',
+    'low quality grainy picture of a group of friends having dinner in 2009.jpg',
   ]
 };
 

@@ -9,6 +9,21 @@ function JobHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedJobs, setExpandedJobs] = useState(new Set());
+  const [sortBy, setSortBy] = useState('newest');
+
+  const sortJobs = (jobsToSort, sortType) => {
+    const sortedJobs = [...jobsToSort];
+    switch (sortType) {
+      case 'newest':
+        return sortedJobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case 'oldest':
+        return sortedJobs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      case 'most-pictures':
+        return sortedJobs.sort((a, b) => b.profilesWithPics - a.profilesWithPics);
+      default:
+        return sortedJobs;
+    }
+  };
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -61,7 +76,18 @@ function JobHistory() {
       </div>
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Job & Balance History</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">Job & Balance History</h1>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-neutral-800 border border-neutral-700 rounded px-3 py-1 text-sm focus:outline-none focus:border-blue-500"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="most-pictures">Most Pictures</option>
+            </select>
+          </div>
           <Link 
             to="/generator" 
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
@@ -76,7 +102,7 @@ function JobHistory() {
           </div>
         ) : (
           <div className="space-y-6">
-            {jobs.map(job => (
+            {sortJobs(jobs, sortBy).map(job => (
               <div 
                 key={job._id} 
                 className="bg-neutral-800 rounded-lg shadow p-6"
